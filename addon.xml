@@ -2,6 +2,7 @@
 <addon id="script.common.plugin.cache" name="Common plugin cache" provider-name="TheCollective" version="2.5.10">
   <requires>
     <import addon="xbmc.python" version="2.24.0" />
+    <import addon="script.module.future"/>
   </requires>
   <extension library="default.py" point="xbmc.service" start="startup">
   </extension>

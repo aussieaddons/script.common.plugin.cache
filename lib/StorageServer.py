@@ -24,6 +24,8 @@ import string
 import sys
 import time
 
+from builtins import str as text
+
 import xbmc
 
 try:
@@ -582,7 +584,7 @@ class StorageServer():
                 try:
                     keyhash.update(params)
                 except:
-                    keyhash.update(str(params))
+                    keyhash.update(params.encode('utf-8'))
 
         name += "|{0}|".format(keyhash.hexdigest())
 
@@ -598,11 +600,11 @@ class StorageServer():
             if cache[name]["timestamp"] > time.time() - (
                     cache[name]["timeout"]):
                 self._log(u"Done, found cache : {0}".format(
-                    name.decode('utf8', 'ignore')))
+                    text(name)))
                 return cache[name]["res"]
             else:
                 self._log(u"Deleting old cache : {0}".format(
-                    name.decode('utf8', 'ignore')), 1)
+                    text(name)), 1)
                 del(cache[name])
 
         self._log(u"Done")
@@ -643,7 +645,7 @@ class StorageServer():
 
             if not ret_val:
                 self._log(
-                    u"Running: {0}".format(name.decode('utf8', 'ignore')))
+                    u"Running: {0}".format(text(name)))
                 ret_val = funct(*args)
                 self._setCache(cache, name, ret_val)
 

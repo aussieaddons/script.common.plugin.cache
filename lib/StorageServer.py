@@ -358,8 +358,6 @@ class StorageServer():
                         send_buffer = data + "\r\n"
                     if isinstance(send_buffer, str):
                         send_buffer = send_buffer.encode('utf-8')
-                    self.xbmc.log(str(type(send_buffer)),
-                                  self.xbmc.LOGNOTICE)
                     result = sock.send(send_buffer)
                     i += 1
                     idle = False

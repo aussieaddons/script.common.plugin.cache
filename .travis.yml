@@ -1,0 +1,37 @@
+language: python
+python: 2.7
+env:
+  global:
+    - secure: bLKj5sxbYjwwIEJBGjHtuobWjchGsPfTLC8dpk0UZi9YkE9QhiWbZIYtgmBFUijPCuDHhkSqbeNaKKSH37y1RnPoMBl+8DLkcfcbjK3CJIe1JWq/OHrVqwk78hamK63l+UErG0vdzUGgWq+ZhkCEWj1pKnLM+nJ2Mk68BzU3SJUggwTCsL1euiFt6yEB+TC8DS9QlUoRJDNdt0hFcLAuKThZ01kxGevEPZcOecvJ2IW5fR96RzeX07sDegin9Ss+uQpkCrDY92X3x3gWxebwowtbZcMwNkpeE4y+KPqJpqbn3wCPqnADWdLgWhLBtHEsxHGelHIHbHvlsB29B+RDRQ1a+Onn8KPle2IqDRRh7RdKQaZxhsjbSQ2mhYnLpvMb7ExO1jpKiFQl2YfR0UCg3YpW38hPpKU3hfG/mS69dB6Sh3eNNnMWttnEcMrtisYEHl0+uGSYgO7LRcDQgPSyWgmY1jvfduByuwy+BuwfWzq2hFJW12hkwomE4s4BDCoVU1TbqB6dRrBCK0GWe0hK1ytjoa0alE9tk5B/XAHhnp8+qT/7L9xVBJHCW4SNwt4TZeiAmxIR1Soi0MTvgwgmlhKLWPHf9dzNIQpSpYQc2rN3NrO3GuaKukB0Ckr7OzP30Av0JSv/kCxmC4rZhJiMsZ50jWoxAMaxJ7veUhYRbNA=
+notifications:
+  slack:
+    secure: LC0N5lX8iGg2eAJX4T35i4Qn360fRYk/gTS5NpXfLl2mCDzc4GzQv3vSxjBvJ6AUePqnE1s2dbkYoLAMyVEqAgtcl7dqVqUyFWs3Yy7KjtmkfQ8Hw5PIbUxEd8N0xQA/anETOqE7zNZ8cMg9qN+RzcfobbY71NJdxNFwEb90WwR+ffzAD8vXoIZoGatYXBxnX8Tl03Hm5lq8fLWsIyYuYzdXCwSefeOkDAzvYk/NYkmlSbM2VTTObKcZdTNj73OZox3t3Lxm9B5z+jzPV0LuHgyG2AjEoSwW2/1XVR1ObVerNMqappnoAGL5sd1KrvW4msSY8C6nNDJyisLBeox43dPxATV7hndEbNqzjuLWQvBOA0DQCkrlmBmRmGRI8Xl8lJB0Y2YElxAE4D4lZEvUsjZp71j+mNo9tCIfxcBVQxP0TZmzWlxoJTBv8vyK3tXlkCq7syC2ktVIJADeDfjfVOtM+iCNig0w9Mo0w7DLP/F7KCde3dwQZ3ll5FA+ZQJTRA0b7/UIbrK5mf2ezYF0djQH29V1CUvCBBRgCgwq6qtYQAqz9aiANs4spRMOWTa6DlxyO99dJAHA1Xvk2pn++ilhEFio36JDBQIOTniJO9UACFQC3bJF4PhehC9801m9U8HnkSShEGvH3n9jQ+bofNG2rjS559pQVY5Nayu6e3E=
+install:
+  - pip install GitPython
+  - export TRAVIS_COMMIT_MSG="$TRAVIS_REPO_SLUG - $(git log --format=%B --no-merges -n 1)"
+script:
+  - test "$TRAVIS_PULL_REQUEST" = "false" || travis_terminate 0
+  - test "$TRAVIS_BRANCH" = "$TRAVIS_TAG" -o "$TRAVIS_BRANCH" = "master" || travis_terminate 0
+  - git config --global user.email 'aussieaddons@aussieaddons.com'
+  - git config --global user.name 'Aussie Add-ons Bot'
+  - >
+    git clone https://github.com/aussieaddons/repo-devel.git $TRAVIS_BUILD_DIR/.deploy-devel &&
+    cd $TRAVIS_BUILD_DIR/.deploy-devel &&
+    ./manage_repo.py $TRAVIS_BUILD_DIR || travis_terminate 1
+  - git config credential.helper "store --file=.git/credentials"
+  - echo "https://${GH_TOKEN}:@github.com" > .git/credentials
+  - >
+    git add . &&
+    git commit --allow-empty -m "$TRAVIS_COMMIT_MSG" &&
+    git push || travis_terminate 1
+  - if [ -z "$TRAVIS_TAG" ]; then travis_terminate 0; fi
+  - >
+    git clone https://github.com/aussieaddons/repo.git $TRAVIS_BUILD_DIR/.deploy-prod &&
+    cd $TRAVIS_BUILD_DIR/.deploy-prod &&
+    ./manage_repo.py $TRAVIS_BUILD_DIR || travis_terminate 1
+  - git config credential.helper "store --file=.git/credentials"
+  - echo "https://${GH_TOKEN}:@github.com" > .git/credentials
+  - >
+    git add . &&
+    git commit --allow-empty -m "Update $(basename `git -C $TRAVIS_BUILD_DIR rev-parse --show-toplevel`) to $TRAVIS_TAG" &&
+    git push || travis_terminate 1
